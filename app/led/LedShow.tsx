@@ -3,25 +3,57 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { initAudio } from "@/lib/audio";
-import { initSoundEffects } from "@/lib/soundEffects";
-import { VIDEO_END_FREEZE_MS } from "@/lib/constants";
-import { useCount } from "./useCount";
+import {
+  initSoundEffects,
+  initMessageSound,
+  startMessageBursts,
+  stopMessageBursts,
+} from "@/lib/soundEffects";
+import {
+  VIDEO_END_FREEZE_MS,
+  LED_FIXED_COUNT,
+  MESSAGE_PLAYS_PER_SEC_MIN,
+  MESSAGE_PLAYS_PER_SEC_MAX,
+} from "@/lib/constants";
+import { preloadShowAssets } from "@/lib/preload";
+import LoadingScreen from "./screens/LoadingScreen";
 import PledgeScreen from "./screens/PledgeScreen";
 import CountdownScreen from "./screens/CountdownScreen";
 import LogoOverlay from "./screens/LogoOverlay";
 import CounterScreen from "./screens/CounterScreen";
 
-type Phase = "welcome" | "pledge" | "countdown" | "video" | "counter";
+type Phase = "loading" | "welcome" | "pledge" | "countdown" | "video" | "counter";
 
 export default function LedShow() {
-  const [phase, setPhase] = useState<Phase>("welcome");
+  const [phase, setPhase] = useState<Phase>("loading");
+  const [loadProgress, setLoadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const count = useCount();
+
+  // Buffer every asset up front so the show never stutters. A short minimum
+  // keeps the loading animation from flashing when assets are already cached.
+  useEffect(() => {
+    let active = true;
+    const minDelay = new Promise((r) => setTimeout(r, 700));
+    Promise.all([
+      preloadShowAssets((loaded, total) => {
+        if (active) setLoadProgress(total ? loaded / total : 1);
+      }),
+      minDelay,
+    ]).then(() => {
+      if (active) setPhase("welcome");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (phase === "video") {
       const video = videoRef.current;
       video?.play().catch(() => {});
+      // Randomized message-sound bursts run for the whole video phase.
+      startMessageBursts(MESSAGE_PLAYS_PER_SEC_MIN, MESSAGE_PLAYS_PER_SEC_MAX);
+      return () => stopMessageBursts();
     }
   }, [phase]);
 
@@ -29,6 +61,7 @@ export default function LedShow() {
   const handleWelcomeTouch = async () => {
     await initAudio();
     initSoundEffects();
+    initMessageSound();
     const video = videoRef.current;
     if (video) {
       try {
@@ -59,7 +92,19 @@ export default function LedShow() {
         onEnded={handleVideoEnded}
         className="absolute inset-0 h-full w-full object-cover"
       />
-      {phase === "video" && <LogoOverlay />}
+      {phase === "video" && (
+        <>
+          <LogoOverlay />
+          <CounterScreen
+            heading="Total Pledges"
+            target={LED_FIXED_COUNT}
+            placement="bottom"
+            endless
+            silent
+            onComplete={() => {}}
+          />
+        </>
+      )}
 
       {/* Shared LED background — also the Screen 1 welcome image. Fades away
           for the video, back in after. */}
@@ -102,12 +147,13 @@ export default function LedShow() {
       {phase === "counter" && (
         <CounterScreen
           heading="Total Pledges"
-          target={count}
-          mode="staggered"
+          target={LED_FIXED_COUNT}
           showThankYou
           onComplete={() => {}}
         />
       )}
+
+      {phase === "loading" && <LoadingScreen progress={loadProgress} />}
     </div>
   );
 }

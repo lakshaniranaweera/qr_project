@@ -1,7 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import LiveCount from "./components/LiveCount";
-import ResetCounter from "./components/ResetCounter";
 import AudioManager from "./components/AudioManager";
 
 const modules = [
@@ -130,18 +128,6 @@ export default function Home() {
               <p className="mt-1 text-sm text-zinc-500">
                 Manage the two event surfaces below.
               </p>
-
-              <div className="mt-6 flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                    Live submissions
-                  </p>
-                  <div className="mt-2">
-                    <LiveCount />
-                  </div>
-                </div>
-                <ResetCounter />
-              </div>
 
               <div className="mt-6 grid gap-6 sm:grid-cols-2">
                 {modules.map((m) => (

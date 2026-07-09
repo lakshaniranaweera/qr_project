@@ -1,205 +1,156 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { initScrollingSound, rollLoop, startScrollingSound, stopScrollingSound, stopThunk } from "@/lib/audio";
+import {
+  initScrollingSound,
+  startScrollingSound,
+  stopScrollingSound,
+  stopThunk,
+} from "@/lib/audio";
 import { playCelebration } from "@/lib/soundEffects";
 import {
   COUNTER_SPIN_MS,
-  COUNTER_STAGGER_MS,
   COUNTER_HOLD_MS,
+  BOTTOM_COUNTER_ROLL_PER_SEC,
   LED_THANK_YOU,
 } from "@/lib/constants";
 
-// Slot-machine counter. Each digit cell is a window over a vertical strip of
-// 0-9 repeated three times; a rAF loop drives translateY only (compositor
-// work, no layout). Spinning keeps position monotonically increasing; the
-// strip repeats, so the wrap from ...9 back to 0 is seamless.
+// Ascending odometer counter. A single value ramps from 0 up to `target`
+// (easing to a stop), and every digit wheel is geared off that value — so the
+// number visibly counts *up* (0, 1, 2, …) rather than showing random digits.
+// A rAF loop drives translateY only (compositor work, no layout). Each digit
+// cell is a window over a vertical strip of 0-9 repeated three times, so the
+// wheel's wrap from ...9 back to 0 is seamless.
 
-const EASE_MS = 600;
-const SPIN_SPEED = 18; // digits per second while spinning
 const STRIP = Array.from({ length: 30 }, (_, i) => i % 10);
-
-interface Reel {
-  pos: number; // continuous position, 1 unit = one digit height
-  mode: "spin" | "ease" | "locked";
-  from: number;
-  to: number;
-  t0: number;
-}
 
 interface Props {
   heading: string;
   target: number;
-  mode: "together" | "staggered";
+  spinMs?: number;
+  // When true the wheels roll upward forever, never locking onto the target.
+  endless?: boolean;
+  // When true no scrolling spin sound plays.
+  silent?: boolean;
   showThankYou?: boolean;
+  placement?: "center" | "bottom";
   onComplete: () => void;
 }
 
 export default function CounterScreen({
   heading,
   target,
-  mode,
+  spinMs = COUNTER_SPIN_MS,
+  endless = false,
+  silent = false,
   showThankYou = false,
+  placement = "center",
   onComplete,
 }: Props) {
+  const bottom = placement === "bottom";
   const targetRef = useRef(target);
+  const spinRef = useRef(spinMs);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => {
     targetRef.current = target;
+    spinRef.current = spinMs;
     onCompleteRef.current = onComplete;
-  }, [target, onComplete]);
+  }, [target, spinMs, onComplete]);
 
-  const [lockedValue, setLockedValue] = useState<number | null>(null);
   const [showMessage, setShowMessage] = useState(false);
-  const doneRef = useRef(false);
-  const reelsRef = useRef<Reel[]>([]);
   const cellsRef = useRef<(HTMLSpanElement | null)[]>([]);
 
-  const numDigits = Math.max(3, String(lockedValue ?? target).length);
+  const numDigits = Math.max(3, String(target).length);
 
-  // create reels as digit cells appear (they start spinning)
+  // count-up decelerates smoothly into its final value
+  const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
+
   useEffect(() => {
-    const reels = reelsRef.current;
-    while (reels.length < numDigits) {
-      reels.push({
-        pos: Math.random() * 10,
-        mode: doneRef.current ? "locked" : "spin",
-        from: 0,
-        to: 0,
-        t0: 0,
-      });
+    if (!silent) {
+      initScrollingSound();
+      startScrollingSound();
     }
-  }, [numDigits]);
 
-  // animation loop — updates transforms only
-  useEffect(() => {
     let raf = 0;
-    let last = performance.now();
-    const loop = (now: number) => {
-      raf = requestAnimationFrame(loop);
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      const reels = reelsRef.current;
-      for (let i = 0; i < reels.length; i++) {
-        const reel = reels[i];
-        if (reel.mode === "spin") {
-          reel.pos += SPIN_SPEED * dt;
-        } else if (reel.mode === "ease") {
-          const p = Math.min((now - reel.t0) / EASE_MS, 1);
-          const eased = 1 - Math.pow(1 - p, 3);
-          reel.pos = reel.from + (reel.to - reel.from) * eased;
-          if (p >= 1) {
-            reel.mode = "locked";
-            reel.pos = reel.to;
-          }
-        }
+    let start: number | null = null;
+
+    // Odometer gearing: digit i (from the left) advances once per 10^place
+    // counts, so translateY tracks value / 10^place.
+    const render = (value: number) => {
+      for (let i = 0; i < numDigits; i++) {
+        const place = Math.pow(10, numDigits - 1 - i);
+        const pos = value / place;
         const el = cellsRef.current[i];
-        if (el) {
-          // keep within the middle copy of the repeated strip
-          el.style.transform = `translateY(${-((reel.pos % 10) + 10)}em)`;
-        }
+        if (el) el.style.transform = `translateY(${-((pos % 10) + 10)}em)`;
       }
+    };
+
+    const finish = () => {
+      // snap each wheel exactly onto the target's digits
+      const digits = target
+        .toString()
+        .padStart(numDigits, "0")
+        .split("")
+        .map(Number);
+      digits.forEach((d, i) => {
+        const el = cellsRef.current[i];
+        if (el) el.style.transform = `translateY(${-(d + 10)}em)`;
+      });
+      stopScrollingSound();
+      stopThunk();
+      if (showThankYou) {
+        playCelebration();
+        setShowMessage(true);
+      }
+      setTimeout(() => onCompleteRef.current(), COUNTER_HOLD_MS);
+    };
+
+    const loop = (now: number) => {
+      if (start === null) start = now;
+      if (endless) {
+        // Roll upward forever at a steady, slow rate — never locks.
+        const elapsedSec = (now - start) / 1000;
+        render(elapsedSec * BOTTOM_COUNTER_ROLL_PER_SEC);
+        raf = requestAnimationFrame(loop);
+        return;
+      }
+      const p = Math.min((now - start) / spinRef.current, 1);
+      render(targetRef.current * easeOut(p));
+      if (p >= 1) {
+        finish();
+        return; // ramp complete — stop the loop
+      }
+      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  // lock a reel onto a digit with at least one extra revolution
-  const lockReel = (index: number, digit: number) => {
-    const reel = reelsRef.current[index];
-    if (!reel) return;
-    const base = Math.ceil(reel.pos) + 10;
-    reel.from = reel.pos;
-    reel.to = base + ((((digit - base) % 10) + 10) % 10);
-    reel.t0 = performance.now();
-    reel.mode = "ease";
-  };
-
-  const digitsOf = (value: number, n: number) =>
-    value.toString().padStart(n, "0").split("").map(Number);
-
-  // spin/lock orchestration — runs once on mount
-  useEffect(() => {
-    initScrollingSound();
-    const roll = rollLoop();
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const after = (ms: number, fn: () => void) =>
-      timers.push(setTimeout(fn, ms));
-
-    startScrollingSound();
-
-    if (mode === "together") {
-      after(COUNTER_SPIN_MS, () => {
-        const value = targetRef.current;
-        setLockedValue(value);
-        const digits = digitsOf(value, Math.max(3, String(value).length));
-        digits.forEach((d, i) => lockReel(i, d));
-        after(EASE_MS, () => {
-          roll.stop();
-          stopScrollingSound();
-          stopThunk();
-          doneRef.current = true;
-        });
-        after(EASE_MS + COUNTER_HOLD_MS, () => onCompleteRef.current());
-      });
-    } else {
-      after(COUNTER_SPIN_MS, () => {
-        const value = targetRef.current;
-        setLockedValue(value);
-        const n = Math.max(3, String(value).length);
-        const digits = digitsOf(value, n);
-        digits.forEach((d, i) => {
-          after(i * COUNTER_STAGGER_MS, () => lockReel(i, d));
-          after(i * COUNTER_STAGGER_MS + EASE_MS, () => stopThunk());
-        });
-        const lastLock = (n - 1) * COUNTER_STAGGER_MS + EASE_MS;
-        after(lastLock + 300, () => {
-          roll.stop();
-          stopScrollingSound();
-          playCelebration();
-          setShowMessage(true);
-          doneRef.current = true;
-          onCompleteRef.current();
-        });
-      });
-    }
 
     return () => {
-      roll.stop();
-      stopScrollingSound();
-      timers.forEach(clearTimeout);
+      cancelAnimationFrame(raf);
+      if (!silent) stopScrollingSound();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // live updates after the sequence finished (hold phase)
-  useEffect(() => {
-    if (!doneRef.current || lockedValue === null || target === lockedValue) {
-      return;
-    }
-    setLockedValue(target);
-    const n = Math.max(3, String(target).length);
-    const digits = digitsOf(target, n);
-    let changed = false;
-    digits.forEach((d, i) => {
-      const reel = reelsRef.current[i];
-      if (!reel) return;
-      const current = ((Math.round(reel.pos) % 10) + 10) % 10;
-      if (current !== d || reel.mode !== "locked") {
-        lockReel(i, d);
-        changed = true;
-      }
-    });
-    if (changed) stopThunk();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target]);
-
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[6vh] px-6">
-      <h2 className="animate-[fade-in_1s_ease-out_both] text-center text-[clamp(1.2rem,4vh,3rem)] font-bold uppercase tracking-[0.3em] text-vaseline-navy">
+    <div
+      className={`absolute inset-0 flex flex-col items-center px-6 ${
+        bottom ? "justify-end gap-[2vh] pb-[6vh]" : "justify-center gap-[6vh]"
+      }`}
+    >
+      <h2
+        className={`animate-[fade-in_1s_ease-out_both] text-center font-bold uppercase tracking-[0.3em] text-vaseline-navy ${
+          bottom
+            ? "text-[clamp(0.8rem,2vh,1.4rem)]"
+            : "text-[clamp(1.2rem,4vh,3rem)]"
+        }`}
+      >
         {heading}
       </h2>
-      <div className="flex gap-[0.06em] text-[26vh] font-bold leading-none text-vaseline-navy">
+      <div
+        className={`flex gap-[0.06em] font-bold leading-none text-vaseline-navy ${
+          bottom ? "text-[13vh]" : "text-[26vh]"
+        }`}
+      >
         {Array.from({ length: numDigits }).map((_, i) => (
           <span
             key={i}

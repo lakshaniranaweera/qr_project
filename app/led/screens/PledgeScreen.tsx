@@ -17,9 +17,10 @@ export default function PledgeScreen({
       <Image
         src="/logo.png"
         alt="Vaseline"
-        width={500}
-        height={150}
-        
+        width={1200}
+        height={360}
+        priority
+        className="h-auto w-[clamp(420px,58vw,900px)]"
       />
       <p className="mt-[6vh] max-w-6xl text-center text-[clamp(1.2rem,3.4vh,2.8rem)] font-semibold leading-relaxed text-vaseline-blue">
         {PLEDGE_TEXT}

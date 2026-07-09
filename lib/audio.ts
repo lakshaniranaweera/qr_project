@@ -25,7 +25,7 @@ export async function initAudio(): Promise<void> {
 }
 
 function makeScrolling(): HTMLAudioElement {
-  const el = new Audio("/api/audio/scrolling");
+  const el = new Audio("/scroll.mp3");
   el.preload = "auto";
   el.loop = true;
   el.addEventListener("error", () => {});

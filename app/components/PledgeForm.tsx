@@ -30,20 +30,14 @@ export default function PledgeForm() {
     () => false
   );
 
-  async function submit() {
-    setStatus("submitting");
+  function submit() {
+    // No backend anymore — remember the pledge locally and show the thank-you.
     try {
-      const res = await fetch("/api/submissions", { method: "POST" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      try {
-        localStorage.setItem(PLEDGED_KEY, "1");
-      } catch {
-        // storage unavailable — count still recorded server-side
-      }
-      setStatus("done");
+      localStorage.setItem(PLEDGED_KEY, "1");
     } catch {
-      setStatus("error");
+      // storage unavailable (private mode) — proceed to thank-you anyway
     }
+    setStatus("done");
   }
 
   // Rendered inside the frosted-glass popup owned by app/user/page.tsx.

@@ -8,6 +8,7 @@
 // when nothing has been uploaded (the file 404s → silence).
 
 let celebration: HTMLAudioElement | null = null;
+let message: HTMLAudioElement | null = null;
 
 function make(slot: string): HTMLAudioElement {
   const el = new Audio(`/api/audio/${slot}`);
@@ -22,6 +23,71 @@ export function initSoundEffects(): void {
   if (!celebration) celebration = make("celebration");
   // Prime within the gesture so buffering starts and playback is unlocked.
   celebration.load();
+}
+
+// The video-phase "pop" sound, served straight from the static public file.
+export function initMessageSound(): void {
+  if (typeof window === "undefined") return;
+  if (!message) {
+    message = new Audio("/message.mp3");
+    message.preload = "auto";
+    message.addEventListener("error", () => {});
+  }
+  // Prime within the gesture so autoplay is unlocked and the file is cached
+  // before the burst loop starts spawning overlapping clones.
+  message.load();
+}
+
+// One-shot play on its own element so plays can overlap (a single HTMLAudio
+// element cannot play itself twice at once). Same URL → served from cache.
+function playOneMessage(): void {
+  try {
+    const el = new Audio("/message.mp3");
+    void el.play().catch(() => {});
+  } catch {
+    // element construction failed — treat as silence
+  }
+}
+
+let messageStop: (() => void) | null = null;
+
+// Fire the message sound at a randomized rate: each 1-second window plays a
+// random count in [min, max], scattered across the second. Returns nothing;
+// call stopMessageBursts() to end it (e.g. when the video phase exits).
+export function startMessageBursts(minPerSec: number, maxPerSec: number): void {
+  if (typeof window === "undefined") return;
+  stopMessageBursts();
+  let stopped = false;
+  let timers: ReturnType<typeof setTimeout>[] = [];
+
+  const tick = () => {
+    if (stopped) return;
+    timers = timers.filter(() => true);
+    const span = Math.max(0, maxPerSec - minPerSec);
+    const count = minPerSec + Math.floor(Math.random() * (span + 1));
+    for (let i = 0; i < count; i++) {
+      timers.push(
+        setTimeout(() => {
+          if (!stopped) playOneMessage();
+        }, Math.random() * 1000)
+      );
+    }
+    timers.push(setTimeout(tick, 1000));
+  };
+  tick();
+
+  messageStop = () => {
+    stopped = true;
+    timers.forEach(clearTimeout);
+    timers = [];
+  };
+}
+
+export function stopMessageBursts(): void {
+  if (messageStop) {
+    messageStop();
+    messageStop = null;
+  }
 }
 
 function play(el: HTMLAudioElement | null): void {
