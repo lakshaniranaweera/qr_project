@@ -17,9 +17,9 @@ interface SlotInfo {
 }
 
 const SLOT_LABELS: Record<string, { title: string; hint: string }> = {
-  blast: {
-    title: "Countdown blast",
-    hint: "Plays on each countdown number (10 → 0).",
+  scrolling: {
+    title: "Scrolling",
+    hint: "Plays while the counter reels are spinning on the last page.",
   },
   celebration: {
     title: "Celebration",
@@ -53,6 +53,8 @@ export default function AudioManager() {
   }, []);
 
   useEffect(() => {
+    // One-off load of the manifest on mount; state settles after the fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
 

@@ -82,23 +82,63 @@ select {
   }
 }
 
-/* Countdown number bursts in with an overshoot as the MP4 blast plays behind it. */
-@keyframes blast-pop {
+@keyframes count-pop {
   0% {
     opacity: 0;
-    transform: scale(0.3);
-    filter: blur(6px);
+    transform: scale(0.58) translateY(0.12em);
+    filter: blur(10px);
   }
-  45% {
+  24% {
     opacity: 1;
-    transform: scale(1.18);
+    transform: scale(1.08) translateY(0);
     filter: blur(0);
-  }
-  70% {
-    transform: scale(0.94);
   }
   100% {
     opacity: 1;
     transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes blast-pop {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.14);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes blast-wave {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@keyframes blast-rays {
+  0% {
+    opacity: 0;
+    transform: scale(0.15) rotate(0deg);
+  }
+  18% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7) rotate(30deg);
   }
 }

@@ -17,8 +17,7 @@ export const LED_THANK_YOU = "THANK YOU FOR TAKING THE PLEDGE";
 export const FALLBACK_POLL_INTERVAL_MS = 10000;
 
 // LED show timings (ms)
-export const COUNTDOWN_FROM = 10;
-export const COUNTDOWN_STEP_MS = 1000;
+// Brief hold after the fire countdown video ends before the video phase.
 export const COUNTDOWN_END_PAUSE_MS = 800;
 export const VIDEO_END_FREEZE_MS = 5000;
 export const COUNTER_SPIN_MS = 4000;

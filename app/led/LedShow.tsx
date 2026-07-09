@@ -21,22 +21,13 @@ export default function LedShow() {
   useEffect(() => {
     if (phase === "video") {
       const video = videoRef.current;
-      video?.play().catch(() => {
-        // audio-autoplay refused despite priming — play muted rather than stall
-        if (video) {
-          video.muted = true;
-          video.play().catch(() => {});
-        }
-      });
+      video?.play().catch(() => {});
     }
   }, [phase]);
 
-  // Screen 1 → 2: the welcome touch also unlocks audio and primes the video
-  // (the later unmuted play() happens well after this gesture).
+  // Screen 1 → 2: the welcome touch also unlocks audio and primes the show.
   const handleWelcomeTouch = async () => {
     await initAudio();
-    // Prime the uploaded sound effects within this gesture so their later,
-    // non-gesture play() calls (countdown / counter) are allowed to run.
     initSoundEffects();
     const video = videoRef.current;
     if (video) {
@@ -45,15 +36,13 @@ export default function LedShow() {
         video.pause();
         video.currentTime = 0;
       } catch {
-        // priming failed — the video-phase effect falls back to muted
+        // priming failed; the video-phase effect will retry when needed
       }
     }
     setPhase("pledge");
   };
 
   const handleVideoEnded = () => {
-    // Freeze on the final frame (~5s) — the <video> keeps showing it —
-    // then bring the LED background back in over it.
     setTimeout(() => setPhase("counter"), VIDEO_END_FREEZE_MS);
   };
 
@@ -61,8 +50,7 @@ export default function LedShow() {
 
   return (
     <div className="relative h-dvh w-full select-none overflow-hidden bg-black">
-      {/* Persistent video layer — mounted for the whole show, never removed,
-          so entry is pre-buffered and the last frame freezes with no flicker. */}
+      {/* Persistent video layer for the show segment. */}
       <video
         ref={videoRef}
         src="/fillingvideo.mp4"

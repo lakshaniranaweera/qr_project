@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { rollLoop, stopThunk } from "@/lib/audio";
+import { initScrollingSound, rollLoop, startScrollingSound, stopScrollingSound, stopThunk } from "@/lib/audio";
 import { playCelebration } from "@/lib/soundEffects";
 import {
   COUNTER_SPIN_MS,
@@ -120,10 +120,13 @@ export default function CounterScreen({
 
   // spin/lock orchestration — runs once on mount
   useEffect(() => {
+    initScrollingSound();
     const roll = rollLoop();
     const timers: ReturnType<typeof setTimeout>[] = [];
     const after = (ms: number, fn: () => void) =>
       timers.push(setTimeout(fn, ms));
+
+    startScrollingSound();
 
     if (mode === "together") {
       after(COUNTER_SPIN_MS, () => {
@@ -133,6 +136,7 @@ export default function CounterScreen({
         digits.forEach((d, i) => lockReel(i, d));
         after(EASE_MS, () => {
           roll.stop();
+          stopScrollingSound();
           stopThunk();
           doneRef.current = true;
         });
@@ -151,6 +155,7 @@ export default function CounterScreen({
         const lastLock = (n - 1) * COUNTER_STAGGER_MS + EASE_MS;
         after(lastLock + 300, () => {
           roll.stop();
+          stopScrollingSound();
           playCelebration();
           setShowMessage(true);
           doneRef.current = true;
@@ -161,6 +166,7 @@ export default function CounterScreen({
 
     return () => {
       roll.stop();
+      stopScrollingSound();
       timers.forEach(clearTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

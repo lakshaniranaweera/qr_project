@@ -2,10 +2,11 @@ import { promises as fs } from "fs";
 import path from "path";
 
 // Uploaded sound-effect files, persisted to disk under data/audio/.
-// There are exactly two managed slots — "blast" (played on each countdown
-// number) and "celebration" (played at the counter finale). Each slot holds at
-// most one file; uploading replaces whatever was there. A manifest.json maps
-// each slot to its stored filename and metadata.
+// The managed slots "scrolling" (played while the counter reels spin) and
+// "celebration" (played at the counter finale) each hold at most one file;
+// uploading replaces whatever was there. A manifest.json maps each slot to
+// its stored filename and metadata. (The countdown's sound comes from the fire
+// countdown video's own audio track, not from an uploaded file.)
 //
 // Like the submission store, all writes are serialized through an in-process
 // promise chain (kept on globalThis so every route handler shares it) so
@@ -14,7 +15,7 @@ import path from "path";
 const AUDIO_DIR = path.join(process.cwd(), "data", "audio");
 const MANIFEST = path.join(AUDIO_DIR, "manifest.json");
 
-export const AUDIO_SLOTS = ["blast", "celebration"] as const;
+export const AUDIO_SLOTS = ["scrolling", "celebration"] as const;
 export type AudioSlot = (typeof AUDIO_SLOTS)[number];
 
 export function isAudioSlot(value: string): value is AudioSlot {
@@ -22,7 +23,7 @@ export function isAudioSlot(value: string): value is AudioSlot {
 }
 
 export interface AudioEntry {
-  file: string; // stored filename on disk, e.g. "blast.mp3"
+  file: string; // stored filename on disk, e.g. "celebration.mp3"
   contentType: string;
   originalName: string;
   size: number;
@@ -106,7 +107,7 @@ export function listEntries(): Promise<Record<AudioSlot, AudioEntry | null>> {
   return enqueue(async () => {
     const manifest = await readManifestRaw();
     return {
-      blast: manifest.blast ?? null,
+      scrolling: manifest.scrolling ?? null,
       celebration: manifest.celebration ?? null,
     };
   });

@@ -1,7 +1,6 @@
-// Procedural texture for the counter's slot-machine spin, synthesized with the
-// Web Audio API. The two headline sound effects — the countdown "blast" and the
-// finale "celebration" — are user-uploaded files played via lib/soundEffects.ts;
-// only the incidental roll/lock texture lives here.
+// Procedural audio for the show, synthesized with the Web Audio API.
+// The counter spin still uses procedural roll texture here, while the
+// scrolling MP3 and finale celebration live in lib/soundEffects.ts.
 //
 // initAudio() must be called from a user gesture (the LED "tap to begin")
 // so the AudioContext is allowed to run. Every function no-ops safely
@@ -9,6 +8,8 @@
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
+
+let scrolling: HTMLAudioElement | null = null;
 
 export async function initAudio(): Promise<void> {
   if (typeof window === "undefined") return;
@@ -21,6 +22,14 @@ export async function initAudio(): Promise<void> {
   if (ctx.state === "suspended") {
     await ctx.resume();
   }
+}
+
+function makeScrolling(): HTMLAudioElement {
+  const el = new Audio("/api/audio/scrolling");
+  el.preload = "auto";
+  el.loop = true;
+  el.addEventListener("error", () => {});
+  return el;
 }
 
 function tone(
@@ -50,6 +59,36 @@ function tone(
   gain.connect(opts.dest ?? master);
   osc.start(start);
   osc.stop(start + duration + 0.05);
+}
+
+function noiseBurst(start: number, duration: number, gainAmount: number): void {
+  if (!ctx || !master) return;
+  const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const channel = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    channel[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+
+  const source = ctx.createBufferSource();
+  const filter = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(900, start);
+  filter.frequency.exponentialRampToValueAtTime(220, start + duration);
+
+  gain.gain.setValueAtTime(0, start);
+  gain.gain.linearRampToValueAtTime(gainAmount, start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+  source.buffer = buffer;
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(master);
+
+  source.start(start);
+  source.stop(start + duration + 0.05);
 }
 
 /**
@@ -94,4 +133,44 @@ export function stopThunk(): void {
   const t = ctx.currentTime;
   tone(180, t, 0.16, { type: "sine", gain: 0.6, endFreq: 90 });
   tone(360, t, 0.06, { type: "triangle", gain: 0.2 });
+}
+
+/** Countdown blast — short impact with a noisy burst and low boom. */
+export function playCountdownBlast(): void {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  noiseBurst(t, 0.42, 0.5);
+  tone(120, t, 0.5, { type: "sine", gain: 0.75, endFreq: 38 });
+  tone(240, t, 0.2, { type: "triangle", gain: 0.18, endFreq: 120 });
+  tone(520, t + 0.02, 0.08, { type: "square", gain: 0.09, endFreq: 260 });
+}
+
+/** Countdown tick — a light click on each number change. */
+export function playCountdownTick(): void {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  tone(980, t, 0.03, { type: "triangle", gain: 0.09, endFreq: 820 });
+  tone(1560, t + 0.004, 0.015, { type: "square", gain: 0.025, endFreq: 1200 });
+}
+
+export function initScrollingSound(): void {
+  if (typeof window === "undefined") return;
+  if (!scrolling) scrolling = makeScrolling();
+  scrolling.load();
+}
+
+export function startScrollingSound(): void {
+  if (!scrolling) return;
+  scrolling.currentTime = 0;
+  void scrolling.play().catch(() => {});
+}
+
+export function stopScrollingSound(): void {
+  if (!scrolling) return;
+  scrolling.pause();
+  try {
+    scrolling.currentTime = 0;
+  } catch {
+    // ignore reset timing errors before metadata loads
+  }
 }
