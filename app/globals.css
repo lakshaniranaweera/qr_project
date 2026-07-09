@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+/* Self-hosted AvantGarde — drop the font file(s) into public/fonts/.
+   Declared as a variable weight range so 300/400/600/700 all resolve to
+   AvantGarde; if you have separate weight files instead, add one @font-face
+   per weight. Until the file exists it falls back to Century Gothic/Futura. */
+@font-face {
+  font-family: "AvantGarde";
+  src:
+    url("/fonts/AvantGarde.woff2") format("woff2"),
+    url("/fonts/AvantGarde.woff") format("woff");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: #ffffff8a;
+  --foreground: #171717;
+  --font-avant: "AvantGarde", "ITC Avant Garde Gothic", "Century Gothic",
+    Futura, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-vaseline-blue: #0057a8;
+  --color-vaseline-blue-deep: #003d7a;
+  --color-vaseline-navy: #2b3a80;
+  --font-avant: var(--font-avant);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-avant);
+}
+
+/* Form controls don't inherit font-family by default — force AvantGarde so
+   every button, input, textarea and select matches the rest of the UI. */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes flip-in {
+  0% {
+    opacity: 0;
+    transform: perspective(900px) rotateX(80deg) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: perspective(900px) rotateX(-10deg) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(900px) rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes zoom-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Countdown number bursts in with an overshoot as the MP4 blast plays behind it. */
+@keyframes blast-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+    filter: blur(6px);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.18);
+    filter: blur(0);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
