@@ -8,24 +8,27 @@ import { OVERLAY_IMAGE_SRC, OVERLAY_SPAWNS_PER_SECOND } from "@/lib/constants";
 // drawImage calls — no style/layout work, so the video decode pipeline is
 // never blocked.
 //
-// Each particle stays in place (no rotation, no drift): it fades in,
-// holds at peak opacity briefly, then fades out.
+// Each particle spawns at a random spot, then travels toward the screen center
+// (which equals the full-screen video's center) while shrinking, and fades out
+// as it arrives — a "bubbles converging into the video" effect.
 
 interface Particle {
   alive: boolean;
-  x: number;
-  y: number;
+  sx: number; // start x (random spawn point)
+  sy: number; // start y
   size: number;
   age: number;
   life: number;
-  peakAlpha: number;
 }
 
 const POOL_SIZE = 160;
-// Fractions of a particle's life spent fading in / fading out; the
-// remainder is the fully-visible hold.
-const FADE_IN = 0.25;
-const FADE_OUT = 0.3;
+// The horizontal center line the images converge onto is not full-width: it
+// leaves this many CSS px clear on the left and right, so only a centered
+// segment remains. Images land within [SIDE_GAP_PX, width - SIDE_GAP_PX].
+const SIDE_GAP_PX = 250;
+// Fraction of a particle's life spent travelling to the line; the rest is spent
+// fading out in place. Nothing fades before arriving.
+const TRAVEL_END = 0.65;
 
 export default function LogoOverlay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,40 +58,28 @@ export default function LogoOverlay() {
 
     const pool: Particle[] = Array.from({ length: POOL_SIZE }, () => ({
       alive: false,
-      x: 0,
-      y: 0,
+      sx: 0,
+      sy: 0,
       size: 0,
       age: 0,
       life: 1,
-      peakAlpha: 1,
     }));
-
-    // Keep every button's full bounding box at least this far from all four
-    // screen edges (CSS px → canvas px via dpr).
-    const EDGE_CLEARANCE = 50 * dpr;
 
     const spawn = () => {
       const p = pool.find((q) => !q.alive);
       if (!p) return; // pool exhausted — skip, never allocate
       p.alive = true;
-      // small buttons scattered across the whole page.
-      p.size = (50 + Math.random() * 90) * dpr;
+      p.size = (80 + Math.random() * 150) * dpr;
 
-      const halfW = p.size / 2;
-      const halfH = (p.size * (img.naturalHeight / img.naturalWidth)) / 2;
-
-      // Random anywhere on the full page (just clear of every edge) — no
-      // central protected box, so images cover the entire screen.
-      const xMin = EDGE_CLEARANCE + halfW;
-      const xMax = Math.max(xMin, canvas.width - EDGE_CLEARANCE - halfW);
-      const yMin = EDGE_CLEARANCE + halfH;
-      const yMax = Math.max(yMin, canvas.height - EDGE_CLEARANCE - halfH);
-      p.x = xMin + Math.random() * (xMax - xMin);
-      p.y = yMin + Math.random() * (yMax - yMin);
+      // Spawn anywhere around the screen, including off-screen on every side,
+      // so images fly in from outside the video boundaries.
+      const marginX = canvas.width * 0.2;
+      const marginY = canvas.height * 0.2;
+      p.sx = -marginX + Math.random() * (canvas.width + 2 * marginX);
+      p.sy = -marginY + Math.random() * (canvas.height + 2 * marginY);
 
       p.age = 0;
       p.life = 1.2 + Math.random() * 1.5;
-      p.peakAlpha = 0.35 + Math.random() * 0.5;
     };
 
     let last = performance.now();
@@ -115,6 +106,13 @@ export default function LogoOverlay() {
       }
 
       const aspect = img.naturalHeight / img.naturalWidth;
+      const cy = canvas.height / 2;
+      // The center line is a centered horizontal segment: images land on y = cy
+      // with x clamped into [minX, maxX] so the line leaves a gap on both sides.
+      const sideGap = SIDE_GAP_PX * dpr;
+      let minX = sideGap;
+      let maxX = canvas.width - sideGap;
+      if (maxX < minX) minX = maxX = canvas.width / 2; // too narrow — collapse
       for (const p of pool) {
         if (!p.alive) continue;
         p.age += dt;
@@ -123,17 +121,23 @@ export default function LogoOverlay() {
           continue;
         }
 
-        // fade in → hold at peak → fade out
         const t = p.age / p.life;
-        let envelope = 1;
-        if (t < FADE_IN) envelope = t / FADE_IN;
-        else if (t > 1 - FADE_OUT) envelope = (1 - t) / FADE_OUT;
-        const alpha = p.peakAlpha * envelope;
+        // Travel phase: ease from the spawn point to the line, arriving at
+        // t = TRAVEL_END; the rest of the life is spent fading out in place.
+        const tp = Math.min(t / TRAVEL_END, 1);
+        const e = tp * tp * (3 - 2 * tp); // smooth ease-in-out
 
-        const w = p.size;
-        const h = p.size * aspect;
-        ctx.globalAlpha = alpha;
-        ctx.drawImage(img, p.x - w / 2, p.y - h / 2, w, h);
+        // Target: the horizontal center line, x pulled into the centered segment.
+        const targetX = Math.min(Math.max(p.sx, minX), maxX);
+        const x = p.sx + e * (targetX - p.sx);
+        const y = p.sy + e * (cy - p.sy);
+        // Scale down gradually (linearly) across the whole animation, to ~15%.
+        const w = p.size * (1 - t * 0.85);
+        const h = w * aspect;
+        // Solid until it reaches the line, then fade out in place.
+        ctx.globalAlpha =
+          t <= TRAVEL_END ? 1 : 1 - (t - TRAVEL_END) / (1 - TRAVEL_END);
+        ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
       }
       ctx.globalAlpha = 1;
     };

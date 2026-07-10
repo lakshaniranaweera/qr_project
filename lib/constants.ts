@@ -4,13 +4,13 @@
 export const BRAND_NAME = "Vaseline";
 
 export const PLEDGE_TEXT =
-  "We pledge to bring Vaseline Gluta Hya to every shelf,  " +
-  "skin confidence to every shopper & excellence to " +
-  "every execution. " 
+  "Vaseline Gluta-Hya සෑම පාරිභෝගිකයෙකුටම ළඟා කරවීමටත්,   " +
+  "ඔවුන් තුළ සම පිළිබඳ විශ්වාසය ඇති කිරීමටත්, " +
+  "සෑම අලෙවියකදීම විශිෂ්ටත්වය පෙන්වීමටත් අපි පොරොන්දු වෙමු! " 
   ;
 
 export const AGREE_BUTTON_LABEL = "I Agree";
-export const USER_THANK_YOU = "Thank you for taking the pledge";
+export const USER_THANK_YOU = "ස්තූතියි";
 export const LED_THANK_YOU = "THANK YOU FOR TAKING THE PLEDGE";
 
 // Fixed number the LED slot-machine counters lock onto. Edit this to set the
@@ -28,7 +28,7 @@ export const COUNTER_HOLD_MS = 3000;
 export const BOTTOM_COUNTER_ROLL_PER_SEC = 13;
 
 // Celebration overlay
-export const OVERLAY_SPAWNS_PER_SECOND = 10;
+export const OVERLAY_SPAWNS_PER_SECOND = 15;
 // Message SFX during the video phase: each second fires a random number of
 // plays in this inclusive range.
 export const MESSAGE_PLAYS_PER_SEC_MIN = 1;

@@ -74,12 +74,20 @@ export default function CounterScreen({
     let raf = 0;
     let start: number | null = null;
 
-    // Odometer gearing: digit i (from the left) advances once per 10^place
-    // counts, so translateY tracks value / 10^place.
+    // Geared odometer: the ones wheel rolls continuously, but every higher
+    // wheel holds steady on its digit and only rolls during the carry (as the
+    // wheel to its right sweeps 9→0) — so higher digits don't creep or jump.
     const render = (value: number) => {
       for (let i = 0; i < numDigits; i++) {
         const place = Math.pow(10, numDigits - 1 - i);
-        const pos = value / place;
+        let pos: number;
+        if (place === 1) {
+          pos = value;
+        } else {
+          const rightPos = value / (place / 10);
+          const carry = Math.min(Math.max((rightPos % 10) - 9, 0), 1);
+          pos = Math.floor(value / place) + carry;
+        }
         const el = cellsRef.current[i];
         if (el) el.style.transform = `translateY(${-((pos % 10) + 10)}em)`;
       }
@@ -134,45 +142,64 @@ export default function CounterScreen({
   return (
     <div
       className={`absolute inset-0 flex flex-col items-center px-6 ${
-        bottom ? "justify-end gap-[2vh] pb-[6vh]" : "justify-center gap-[6vh]"
+        bottom ? "justify-end pb-[6vh]" : "justify-center"
       }`}
     >
-      <h2
-        className={`animate-[fade-in_1s_ease-out_both] text-center font-bold uppercase tracking-[0.3em] text-vaseline-navy ${
-          bottom
-            ? "text-[clamp(0.8rem,2vh,1.4rem)]"
-            : "text-[clamp(1.2rem,4vh,3rem)]"
-        }`}
-      >
-        {heading}
-      </h2>
+      {/* Heading + number group. On finish (center + showThankYou) it eases
+          smaller and rises via transform (no reflow), making room for the
+          message that grows in below. */}
       <div
-        className={`flex gap-[0.06em] font-bold leading-none text-vaseline-navy ${
-          bottom ? "text-[13vh]" : "text-[26vh]"
+        className={`flex flex-col items-center transition-transform duration-[900ms] ease-out ${
+          bottom ? "gap-[2vh]" : "gap-[6vh]"
+        } ${
+          !bottom && showMessage
+            ? "-translate-y-[10vh] scale-[0.6]"
+            : "translate-y-0 scale-100"
         }`}
       >
-        {Array.from({ length: numDigits }).map((_, i) => (
-          <span
-            key={i}
-            className="relative block h-[1em] w-[0.72em] overflow-hidden text-center [text-shadow:0_0.02em_0.12em_rgba(43,58,128,0.3)]"
-          >
+        <h2
+          className={`animate-[fade-in_1s_ease-out_both] text-center font-bold uppercase tracking-[0.3em] text-vaseline-navy ${
+            bottom
+              ? "text-[clamp(0.8rem,2vh,1.4rem)]"
+              : "text-[clamp(1.2rem,4vh,3rem)]"
+          }`}
+        >
+          {heading}
+        </h2>
+        <div
+          className={`flex gap-[0.06em] font-bold leading-none text-vaseline-navy ${
+            bottom ? "text-[13vh]" : "text-[26vh]"
+          }`}
+        >
+          {Array.from({ length: numDigits }).map((_, i) => (
             <span
-              ref={(el) => {
-                cellsRef.current[i] = el;
-              }}
-              className="absolute left-0 top-0 block w-full will-change-transform"
+              key={i}
+              className="relative block h-[1em] w-[0.72em] overflow-hidden text-center [text-shadow:0_0.02em_0.12em_rgba(43,58,128,0.3)]"
             >
-              {STRIP.map((d, j) => (
-                <span key={j} className="block h-[1em] w-full">
-                  {d}
-                </span>
-              ))}
+              <span
+                ref={(el) => {
+                  cellsRef.current[i] = el;
+                }}
+                className="absolute left-0 top-0 block w-full will-change-transform"
+              >
+                {STRIP.map((d, j) => (
+                  <span key={j} className="block h-[1em] w-full">
+                    {d}
+                  </span>
+                ))}
+              </span>
             </span>
-          </span>
-        ))}
+          ))}
+        </div>
       </div>
-      {showThankYou && showMessage && (
-        <p className="max-w-5xl animate-[zoom-fade-in_1.2s_ease-out_both] text-center text-[clamp(1.4rem,5vh,3.6rem)] font-bold uppercase tracking-[0.18em] text-vaseline-navy">
+      {showThankYou && (
+        <p
+          className={`absolute left-1/2 top-[60%] max-w-5xl -translate-x-1/2 text-center text-[clamp(1.4rem,5vh,3.6rem)] font-bold uppercase tracking-[0.18em] text-vaseline-navy transition-all duration-[900ms] ease-out ${
+            showMessage
+              ? "opacity-100 scale-100"
+              : "pointer-events-none opacity-0 scale-75"
+          }`}
+        >
           {LED_THANK_YOU}
         </p>
       )}
