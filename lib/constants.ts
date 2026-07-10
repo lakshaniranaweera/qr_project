@@ -34,8 +34,3 @@ export const OVERLAY_SPAWNS_PER_SECOND = 10;
 export const MESSAGE_PLAYS_PER_SEC_MIN = 1;
 export const MESSAGE_PLAYS_PER_SEC_MAX = 5;
 export const OVERLAY_IMAGE_SRC = "/Agree.png";
-// Buttons scatter at random anywhere on screen EXCEPT a protected central box
-// where the video/logo plays. These are that box's size as a fraction of the
-// screen width/height.
-export const OVERLAY_CENTER_EXCLUDE_W = 0.62;
-export const OVERLAY_CENTER_EXCLUDE_H = 0.5;

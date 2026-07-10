@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  OVERLAY_IMAGE_SRC,
-  OVERLAY_SPAWNS_PER_SECOND,
-  OVERLAY_CENTER_EXCLUDE_W,
-  OVERLAY_CENTER_EXCLUDE_H,
-} from "@/lib/constants";
+import { OVERLAY_IMAGE_SRC, OVERLAY_SPAWNS_PER_SECOND } from "@/lib/constants";
 
 // Celebration overlay: a single 2D canvas above the video. One compositor
 // layer, a fixed particle pool (zero allocation per frame), and batched
@@ -76,48 +71,20 @@ export default function LogoOverlay() {
       const p = pool.find((q) => !q.alive);
       if (!p) return; // pool exhausted — skip, never allocate
       p.alive = true;
-      // big, prominent buttons — the edge-clearance clamps below keep even the
-      // largest ones fully on screen.
-      p.size = (120 + Math.random() * 240) * dpr;
+      // small buttons scattered across the whole page.
+      p.size = (50 + Math.random() * 90) * dpr;
 
       const halfW = p.size / 2;
       const halfH = (p.size * (img.naturalHeight / img.naturalWidth)) / 2;
 
-      // Random anywhere in the play area (50px clear of every edge)...
+      // Random anywhere on the full page (just clear of every edge) — no
+      // central protected box, so images cover the entire screen.
       const xMin = EDGE_CLEARANCE + halfW;
       const xMax = Math.max(xMin, canvas.width - EDGE_CLEARANCE - halfW);
       const yMin = EDGE_CLEARANCE + halfH;
       const yMax = Math.max(yMin, canvas.height - EDGE_CLEARANCE - halfH);
-
-      // ...but never overlapping the central box where the video/logo plays.
-      const exL = canvas.width * (0.5 - OVERLAY_CENTER_EXCLUDE_W / 2);
-      const exR = canvas.width * (0.5 + OVERLAY_CENTER_EXCLUDE_W / 2);
-      const exT = canvas.height * (0.5 - OVERLAY_CENTER_EXCLUDE_H / 2);
-      const exB = canvas.height * (0.5 + OVERLAY_CENTER_EXCLUDE_H / 2);
-
-      // Rejection-sample a spot whose bounding box clears the center box.
-      let placed = false;
-      for (let i = 0; i < 24; i++) {
-        const x = xMin + Math.random() * (xMax - xMin);
-        const y = yMin + Math.random() * (yMax - yMin);
-        const overlapsCenter =
-          x + halfW > exL &&
-          x - halfW < exR &&
-          y + halfH > exT &&
-          y - halfH < exB;
-        if (!overlapsCenter) {
-          p.x = x;
-          p.y = y;
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        // No room outside the center this time (button too big) — skip it
-        // rather than let it cover the video.
-        p.alive = false;
-        return;
-      }
+      p.x = xMin + Math.random() * (xMax - xMin);
+      p.y = yMin + Math.random() * (yMax - yMin);
 
       p.age = 0;
       p.life = 1.2 + Math.random() * 1.5;

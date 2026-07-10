@@ -31,7 +31,7 @@ export default function CountdownScreen({
   };
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-black">
+    <div className="absolute inset-0 overflow-hidden">
       <video
         ref={videoRef}
         src="/firecountdown.mp4"
