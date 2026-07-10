@@ -65,7 +65,7 @@ export default function PledgeForm() {
         </div>
       ) : (
         <>
-          <p className="text-center text-[clamp(0.95rem,3.8vw,1.2rem)] font-bold leading-relaxed text-vaseline-blue">
+          <p className="text-center text-[clamp(0.05rem,0.3vw,0.2rem)] font-bold leading-relaxed text-vaseline-blue">
             {PLEDGE_TEXT}
           </p>
           <button
