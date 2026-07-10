@@ -22,7 +22,7 @@ export default function PledgeScreen({
         priority
         className="h-auto w-[clamp(420px,58vw,900px)]"
       />
-      <p className="mt-[6vh] max-w-6xl text-center text-[clamp(1.5rem,4vh,2rem)] font-semibold leading-relaxed text-vaseline-blue">
+      <p className="mt-[6vh] max-w-6xl whitespace-pre-line text-center text-[clamp(1.25rem,3.6vw,2rem)] font-semibold leading-relaxed text-vaseline-blue">
         {PLEDGE_TEXT}
       </p>
     </div>

@@ -4,13 +4,12 @@
 export const BRAND_NAME = "Vaseline";
 
 export const PLEDGE_TEXT =
-  "We pledge to bring Vaseline Gluta Hya to every shelf, skin confidence to every shopper & excellence to every execution .\n\n"+
-  "Vaseline Gluta-Hya සෑම පාරිභෝගිකයෙකුටම ළඟා කරවීමටත්, ඔවුන් තුළ සම පිළිබඳ විශ්වාසය ඇති කිරීමටත්, සෑම අලෙවියකදීම විශිෂ්ටත්වය පෙන්වීමටත් අපි පොරොන්දු වෙමු! \n \n" +
-  "Vaseline Gluta-Hya ஒவ்வொரு வாடிக்கையாளரையும் சென்றடைவதற்கும், அவர்கள் மத்தியில் தங்கள் சருமத்தின் மீதான நம்பிக்கையை ஏற்படுத்தவும், ஒவ்வொரு விற்பனை நடவடிக்கையிலும் சிறந்த சேவையை வழங்கவும் நாம் உறுதியளிக்கிறோம்" 
-  ;
+  "We pledge to bring Vaseline Gluta Hya to every shelf, skin confidence to every shopper & excellence in every execution.\n\n" +
+  "Vaseline Gluta-Hya සෑම පාරිභෝගිකයෙකුටම ළඟා කරවීමටත්, ඔවුන් තුළ සම පිළිබඳ විශ්වාසය ඇති කිරීමටත්, සෑම අලෙවියකදීම විශිෂ්ටත්වය පෙන්වීමටත් අපි පොරොන්දු වෙමු!\n\n" +
+  "Vaseline Gluta-Hya ஒவ்வொரு வாடிக்கையாளரையும் சென்றடைவதற்கும், அவர்கள் மத்தியில் தங்கள் சருமத்தின் மீதான நம்பிக்கையை ஏற்படுத்தவும், ஒவ்வொரு விற்பனை நடவடிக்கையிலும் சிறந்த சேவையை வழங்கவும் நாம் உறுதியளிக்கிறோம்";
 
 export const AGREE_BUTTON_LABEL = "I Agree";
-export const USER_THANK_YOU = "ස්තූතියි";
+export const USER_THANK_YOU = "THANK YOU FOR TAKING THE PLEDGE";
 export const LED_THANK_YOU = "THANK YOU FOR TAKING THE PLEDGE";
 
 // Fixed number the LED slot-machine counters lock onto. Edit this to set the
