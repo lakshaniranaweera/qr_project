@@ -9,6 +9,7 @@
 
 let celebration: HTMLAudioElement | null = null;
 let message: HTMLAudioElement | null = null;
+const MESSAGE_VARIANTS = ["/message.mp3", "/message1.mp3"];
 
 function make(slot: string): HTMLAudioElement {
   const el = new Audio(`/api/audio/${slot}`);
@@ -29,20 +30,27 @@ export function initSoundEffects(): void {
 export function initMessageSound(): void {
   if (typeof window === "undefined") return;
   if (!message) {
-    message = new Audio("/message.mp3");
+    message = new Audio(MESSAGE_VARIANTS[0]);
     message.preload = "auto";
     message.addEventListener("error", () => {});
   }
   // Prime within the gesture so autoplay is unlocked and the file is cached
   // before the burst loop starts spawning overlapping clones.
   message.load();
+  for (const url of MESSAGE_VARIANTS.slice(1)) {
+    const extra = new Audio(url);
+    extra.preload = "auto";
+    extra.addEventListener("error", () => {});
+    extra.load();
+  }
 }
 
 // One-shot play on its own element so plays can overlap (a single HTMLAudio
 // element cannot play itself twice at once). Same URL → served from cache.
 function playOneMessage(): void {
   try {
-    const el = new Audio("/message.mp3");
+    const url = MESSAGE_VARIANTS[Math.floor(Math.random() * MESSAGE_VARIANTS.length)];
+    const el = new Audio(url);
     void el.play().catch(() => {});
   } catch {
     // element construction failed — treat as silence

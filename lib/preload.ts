@@ -19,6 +19,7 @@ export const SHOW_ASSETS: Asset[] = [
   { url: "/Agree.png", kind: "image" },
   { url: "/scroll.mp3", kind: "audio" },
   { url: "/message.mp3", kind: "audio" },
+  { url: "/message1.mp3", kind: "audio" },
 ];
 
 // A single asset that stalls (slow network, missing file) must never hang the
