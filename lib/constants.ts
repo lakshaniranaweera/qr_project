@@ -27,7 +27,7 @@ export const COUNTER_HOLD_MS = 3000;
 export const BOTTOM_COUNTER_ROLL_PER_SEC = 13;
 
 // Celebration overlay
-export const OVERLAY_SPAWNS_PER_SECOND = 15;
+export const OVERLAY_SPAWNS_PER_SECOND = 8;
 // Message SFX during the video phase: each second fires a random number of
 // plays in this inclusive range.
 export const MESSAGE_PLAYS_PER_SEC_MIN = 1;
