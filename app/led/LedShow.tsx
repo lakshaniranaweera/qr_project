@@ -17,12 +17,13 @@ import {
 } from "@/lib/constants";
 import { preloadShowAssets } from "@/lib/preload";
 import LoadingScreen from "./screens/LoadingScreen";
+import QRScreen from "./QRscreen";
 import PledgeScreen from "./screens/PledgeScreen";
 import CountdownScreen from "./screens/CountdownScreen";
 import LogoOverlay from "./screens/LogoOverlay";
 import CounterScreen from "./screens/CounterScreen";
 
-type Phase = "loading" | "welcome" | "pledge" | "countdown" | "video" | "counter";
+type Phase = "loading" | "welcome" | "qr" | "pledge" | "countdown" | "video" | "counter";
 
 export default function LedShow() {
   const [phase, setPhase] = useState<Phase>("loading");
@@ -72,7 +73,7 @@ export default function LedShow() {
         // priming failed; the video-phase effect will retry when needed
       }
     }
-    setPhase("pledge");
+    setPhase("qr");
   };
 
   const handleVideoEnded = () => {
@@ -137,6 +138,9 @@ export default function LedShow() {
             className="absolute inset-0 cursor-pointer"
           />
         </>
+      )}
+      {phase === "qr" && (
+        <QRScreen onComplete={() => setPhase("pledge")} />
       )}
       {phase === "pledge" && (
         <PledgeScreen onComplete={() => setPhase("countdown")} />
