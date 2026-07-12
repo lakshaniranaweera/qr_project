@@ -14,7 +14,7 @@ export const LED_THANK_YOU = "THANK YOU FOR TAKING THE PLEDGE";
 
 // Fixed number the LED slot-machine counters lock onto. Edit this to set the
 // displayed total for the show — it is no longer tied to real submissions.
-export const LED_FIXED_COUNT = 371;
+export const LED_FIXED_COUNT = 304;
 
 // LED show timings (ms)
 // Brief hold after the fire countdown video ends before the video phase.
@@ -24,7 +24,7 @@ export const COUNTER_SPIN_MS = 4000;
 export const COUNTER_HOLD_MS = 3000;
 // The step-4 bottom reel never stops — it counts up endlessly. This is how
 // fast its fastest (ones) wheel rolls, in digits per second. Lower = slower.
-export const BOTTOM_COUNTER_ROLL_PER_SEC = 10;
+export const BOTTOM_COUNTER_ROLL_PER_SEC = 8;
 
 // Celebration overlay
 export const OVERLAY_SPAWNS_PER_SECOND = 8;
