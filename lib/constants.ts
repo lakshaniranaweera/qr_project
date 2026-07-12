@@ -14,7 +14,7 @@ export const LED_THANK_YOU = "THANK YOU FOR TAKING THE PLEDGE";
 
 // Fixed number the LED slot-machine counters lock onto. Edit this to set the
 // displayed total for the show — it is no longer tied to real submissions.
-export const LED_FIXED_COUNT = 420;
+export const LED_FIXED_COUNT = 371;
 
 // LED show timings (ms)
 // Brief hold after the fire countdown video ends before the video phase.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import {
   PLEDGE_TEXT,
   AGREE_BUTTON_LABEL,
@@ -9,41 +9,19 @@ import {
 
 type Status = "idle" | "submitting" | "done" | "error";
 
-const PLEDGED_KEY = "vaseline-pledged";
-
-const noopSubscribe = () => () => {};
-function readPledgedFlag(): boolean {
-  try {
-    return localStorage.getItem(PLEDGED_KEY) === "1";
-  } catch {
-    return false; // storage unavailable (private mode) — allow submission
-  }
-}
-
 export default function PledgeForm() {
   const [status, setStatus] = useState<Status>("idle");
-  // Duplicate guard: a device that already pledged goes straight to the
-  // thank-you state instead of offering a second submission.
-  const alreadyPledged = useSyncExternalStore(
-    noopSubscribe,
-    readPledgedFlag,
-    () => false
-  );
 
   function submit() {
-    // No backend anymore — remember the pledge locally and show the thank-you.
-    try {
-      localStorage.setItem(PLEDGED_KEY, "1");
-    } catch {
-      // storage unavailable (private mode) — proceed to thank-you anyway
-    }
+    // No backend — just show the thank-you state. No local record is kept,
+    // so this device can pledge again on the next scan/visit.
     setStatus("done");
   }
 
   // Rendered inside the frosted-glass popup owned by app/user/page.tsx.
   return (
     <div className="mt-6">
-      {status === "done" || (alreadyPledged && status === "idle") ? (
+      {status === "done" ? (
         <div className="animate-[fade-in_0.6s_ease-out_both] rounded-3xl border border-white/30 bg-white/20 p-6 text-center shadow-[0_18px_45px_rgba(43,58,128,0.18)] backdrop-blur-xl sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-0">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-vaseline-blue text-white shadow-lg sm:h-16 sm:w-16">
             <svg
